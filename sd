@@ -50,3 +50,24 @@ function Install-ADTDeployment {
 
     Show-ADTInstallationPrompt -Message 'Installation complete.' -ButtonRightText 'OK'
 }
+
+
+
+
+
+
+
+
+
+
+
+
+b91user05@rpsconsulting.in
+
+GIT Lab URL
+
+gitlab.rpsconsulting.in
+
+GIT Lab Password
+
+Wipro@2025
