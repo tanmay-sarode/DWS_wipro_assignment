@@ -1,0 +1,52 @@
+function Install-ADTDeployment {
+    ##================================================
+    ## MARK: Pre-Install
+    ##================================================
+    $adtSession.InstallPhase = "Pre-$($adtSession.DeploymentType)"
+
+    Show-ADTInstallationWelcome -CloseProcesses iexplore -AllowDefer -DeferTimes 3 -CheckDiskSpace -PersistPrompt
+    Show-ADTInstallationProgress
+
+    ##================================================
+    ## MARK: Install
+    ##================================================
+    $adtSession.InstallPhase = "$($adtSession.DeploymentType)"
+
+    # Example: Install MSI
+    Execute-MSI -Action 'Install' -Path 'Adobe_FlashPlayer_11.2.202.233_x64_EN.msi'
+
+    # Example: Install MSI with MST and silent params
+    Execute-MSI -Action 'Install' -Path 'Adobe_FlashPlayer_11.2.202.233_x64_EN.msi' -Transform 'Adobe_FlashPlayer_11.2.202.233_x64_EN_01.mst' -Parameters '/QN'
+
+    # Uninstall Example
+    Execute-MSI -Action 'Uninstall' -Path '{26923b43-4d38-484f-9b9e-de460746276c}'
+
+    # Apply Patches
+    Execute-MSI -Action 'Patch' -Path 'Adobe_Reader_11.0.3_EN.msp'
+    Execute-MSP -Path 'AcroRdr2017Upd1701130143_MUI.msp' -AddParameters 'ALLUSERS=1'
+
+    # Copy files
+    Copy-File -Path "$dirSupportFiles\MyApp.ini" -Destination "$envWinDir\MyApp.ini"
+
+    # Install using EXE
+    Execute-Process -Path 'uninstall_flash_player_64bit.exe' -Parameters '/uninstall' -WindowStyle 'Hidden'
+    Execute-Process -Path "$dirFiles\Bin\setup.exe" -Parameters '/S' -WindowStyle 'Hidden'
+
+    # Log configuration
+    Execute-Process -Path 'setup.exe' -Parameters "-s -f2`"$configToolkitLogDir\$installName.log`""
+    Execute-Process -Path 'setup.exe' -Parameters "/s /v`"ALLUSERS=1 /qn /L* `"$configToolkitLogDir\$installName.log`"`""
+
+    # Active Setup
+    Set-ActiveSetup -StubExePath 'C:\Users\Public\Company\ProgramUserConfig.vbs' -Arguments '/Silent' -Description 'Program User Config' -Key 'ProgramUserConfig' -Locale 'en'
+    Set-ActiveSetup -StubExePath "$envWinDir\regedit.exe" -Arguments "/S `"%SystemDrive%\Program Files (x86)\PS App Deploy\PSAppDeployHKCUSettings.reg`"" -Description 'PS App Deploy Config' -Key 'PS_App_Deploy_Config' -ContinueOnError $true
+
+    # Install Windows Updates from folder
+    Install-MSUpdates -Directory "$dirFiles\MSUpdates"
+
+    ##================================================
+    ## MARK: Post-Install
+    ##================================================
+    $adtSession.InstallPhase = "Post-$($adtSession.DeploymentType)"
+
+    Show-ADTInstallationPrompt -Message 'Installation complete.' -ButtonRightText 'OK'
+}
